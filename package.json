@@ -1,0 +1,20 @@
+{
+  "name": "persona_swap-ai-powered-personality-switching-api",
+  "version": "1.0.0",
+  "description": "A fun Node.js API that rewrites your messages in the voice of famous personas like Yoda, Shakespeare, Elon Musk, and more. Perfect for meme bots, writing tools, or just for laughs.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/H-N-S-Abayawardhana/Persona_Swap-AI-Powered-Personality-Switching-API.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/H-N-S-Abayawardhana/Persona_Swap-AI-Powered-Personality-Switching-API/issues"
+  },
+  "homepage": "https://github.com/H-N-S-Abayawardhana/Persona_Swap-AI-Powered-Personality-Switching-API#readme"
+}
