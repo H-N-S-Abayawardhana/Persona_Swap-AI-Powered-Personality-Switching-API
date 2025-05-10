@@ -1,29 +1,31 @@
 {
-  "name": "persona_swap-ai-powered-personality-switching-api",
+  "name": "persona-swap",
   "version": "1.0.0",
-  "description": "A fun Node.js API that rewrites your messages in the voice of famous personas like Yoda, Shakespeare, Elon Musk, and more. Perfect for meme bots, writing tools, or just for laughs.",
-  "main": "index.js",
+  "description": "API for transforming messages using different personas",
+  "main": "app.js",
   "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/H-N-S-Abayawardhana/Persona_Swap-AI-Powered-Personality-Switching-API.git"
-  },
-  "keywords": [],
+  "keywords": [
+    "express",
+    "api",
+    "personas",
+    "transformer"
+  ],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/H-N-S-Abayawardhana/Persona_Swap-AI-Powered-Personality-Switching-API/issues"
-  },
-  "homepage": "https://github.com/H-N-S-Abayawardhana/Persona_Swap-AI-Powered-Personality-Switching-API#readme",
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "ejs": "^3.1.10",
-    "express": "^5.1.0",
-    "express-rate-limit": "^7.5.0",
-    "helmet": "^8.1.0",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
     "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
   }
 }
