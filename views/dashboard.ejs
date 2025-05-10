@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PersonaSwap - AI-Powered Personality Switching</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .persona-card {
+            cursor: pointer;
+            height: 100%;
+        }
+        .persona-card.active {
+            border: 3px solid #0d6efd;
+        }
+        .persona-image {
+            height: 120px;
+            width: 120px;
+            margin: 0 auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #dee2e6;
+        }
+        .persona-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .history-item {
+            border-left: 4px solid #0d6efd;
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+        .stats-card {
+            text-align: center;
+            padding: 20px;
+        }
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        #loadingSpinner {
+            display: none;
+        }
+        footer {
+            margin-top: 50px;
+            padding: 20px 0;
+            background-color: #f1f3f5;
+        }
+        .chart-container {
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-exchange-alt me-2"></i>
+                PersonaSwap
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#apiModal">
+                            <i class="fas fa-code me-1"></i> API Docs
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <!-- Header Section -->
+        <div class="row mb-5">
+            <div class="col-lg-8">
+                <h1 class="display-4">AI-Powered Personality Switching</h1>
+                <p class="lead text-muted">Transform your text into different personas with our advanced AI system.</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-5">
+            <div class="col-md-4 mb-4">
+                <div class="card stats-card">
+                    <div class="stats-number"><%= stats.totalTransformations %></div>
+                    <div class="stats-label">Total Transformations</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card stats-card">
+                    <div class="stats-number"><%= stats.uniqueUsers %></div>
+                    <div class="stats-label">Unique Users</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card stats-card">
+                    <div class="stats-number"><%= stats.availablePersonas %></div>
+                    <div class="stats-label">Available Personas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="row mb-5">
+            <div class="col-lg-9">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-comment-alt me-2"></i>Try It Out</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="chatContainer" class="border rounded p-3 mb-3" style="height: 300px; overflow-y: auto;">
+                            <div class="d-flex justify-content-center align-items-center h-100 text-muted">
+                                <div class="text-center">
+                                    <i class="fas fa-comments fa-3x mb-3"></i>
+                                    <p>Start a conversation to see transformations</p>
+                                </div>
+                            </div>
+                        </div>
+                        <form id="messageForm">
+                            <div class="input-group">
+                                <input type="text" id="messageInput" class="form-control" placeholder="Type your message...">
+                                <button type="submit" class="btn btn-primary">
+                                    <span id="loadingSpinner" class="spinner-border spinner-border-sm me-1"></span>
+                                    Send
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Select Persona</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="personas-list">
+                            <% personas.forEach(function(persona) { %>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input persona-radio" type="radio" name="persona" id="<%= persona.name %>" value="<%= persona.name %>" <%= persona.name === 'Sherlock Holmes' ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="<%= persona.name %>">
+                                        <%= persona.name %>
+                                    </label>
+                                    <p class="text-muted small mb-0"><%= persona.description %></p>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personas Showcase -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="mb-4">Available Personas</h2>
+            </div>
+            <% personas.forEach(function(persona, index) { %>
+                <div class="col-md-3 mb-4">
+                    <div class="card persona-card h-100">
+                        <div class="card-body text-center">
+                            <div class="persona-image mb-3">
+                                <img src="/images/<%= persona.name.toLowerCase().replace(/\s/g, '-') %>.jpg" alt="<%= persona.name %>" onerror="this.src='/images/default-persona.jpg'">
+                            </div>
+                            <h5 class="card-title"><%= persona.name %></h5>
+                            <p class="card-text text-muted"><%= persona.description %></p>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-sm btn-outline-primary w-100 select-persona-btn" data-persona="<%= persona.name %>">Select</button>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+
+        <!-- Usage Data -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="mb-4">Usage Analytics</h2>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Popular Personas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="personasChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Daily Transformations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="transformationsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transformations -->
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">Recent Transformations</h2>
+            </div>
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <% if (history && history.length > 0) { %>
+                            <div class="history-list">
+                                <% history.forEach(function(item) { %>
+                                    <div class="history-item">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <strong>Original Message:</strong>
+                                                    <p><%= item.originalMessage %></p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <strong>Transformed (<%= item.persona %>):</strong>
+                                                    <p><%= item.transformedMessage %></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-muted small">
+                                            <i class="far fa-clock me-1"></i> <%= new Date(item.timestamp).toLocaleString() %>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-history fa-3x mb-3"></i>
+                                <p>No transformation history available yet</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Modal -->
+    <div class="modal fade" id="apiModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">API Documentation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Endpoint: /api/transform</h6>
+                    <p>Transform text using a selected persona.</p>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">Request (POST)</div>
+                        <div class="card-body">
+                            <pre><code>{
+  "message": "Your text message here",
+  "persona": "Sherlock Holmes"
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">Response</div>
+                        <div class="card-body">
+                            <pre><code>{
+  "success": true,
+  "data": {
+    "original": "Your text message here",
+    "transformed": "By my deduction, your text message here, my dear Watson.",
+    "persona": "Sherlock Holmes"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <h6>Endpoint: /api/personas</h6>
+                    <p>Get a list of all available personas.</p>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">Request (GET)</div>
+                        <div class="card-body">
+                            <code>GET /api/personas</code>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">Response</div>
+                        <div class="card-body">
+                            <pre><code>{
+  "success": true,
+  "data": [
+    {
+      "name": "Sherlock Holmes",
+      "description": "Transforms text to sound like the famous detective",
+      "examples": [...]
+    },
+    {
+      "name": "Shakespeare",
+      "description": "Transforms text into Shakespearean English",
+      "examples": [...]
+    },
+    ...
+  ]
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2025 PersonaSwap. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="#" class="text-decoration-none text-muted me-3">Terms of Service</a>
+                    <a href="#" class="text-decoration-none text-muted">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form submission
+            const messageForm = document.getElementById('messageForm');
+            const messageInput = document.getElementById('messageInput');
+            const chatContainer = document.getElementById('chatContainer');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            messageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (!message) return;
+                
+                // Get selected persona
+                const selectedPersona = document.querySelector('input[name="persona"]:checked').value;
+                
+                // Show loading
+                loadingSpinner.style.display = 'inline-block';
+                
+                // Add user message
+                addMessageToChat('user', message);
+                
+                // Call API
+                fetch('/api/transform', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        persona: selectedPersona
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Add bot message
+                        addMessageToChat('bot', data.data.transformed, selectedPersona);
+                    } else {
+                        // Add error message
+                        addMessageToChat('error', 'Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addMessageToChat('error', 'Error: Failed to connect to the server');
+                })
+                .finally(() => {
+                    // Hide loading
+                    loadingSpinner.style.display = 'none';
+                    // Clear input
+                    messageInput.value = '';
+                });
+            });
+
+            // Add message to chat
+            function addMessageToChat(type, message, persona = null) {
+                // Remove initial empty state if present
+                if (chatContainer.querySelector('.text-center')) {
+                    chatContainer.innerHTML = '';
+                }
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'd-flex mb-3';
+                
+                if (type === 'user') {
+                    messageDiv.className += ' justify-content-end';
+                    messageDiv.innerHTML = `
+                        <div class="bg-primary text-white rounded p-2" style="max-width: 75%;">
+                            ${message}
+                        </div>
+                    `;
+                } else if (type === 'bot') {
+                    messageDiv.innerHTML = `
+                        <div class="bg-light rounded p-2" style="max-width: 75%;">
+                            <div class="small text-primary mb-1">${persona}</div>
+                            ${message}
+                        </div>
+                    `;
+                } else if (type === 'error') {
+                    messageDiv.innerHTML = `
+                        <div class="bg-danger text-white rounded p-2" style="max-width: 75%;">
+                            ${message}
+                        </div>
+                    `;
+                }
+                
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            // Select persona buttons
+            document.querySelectorAll('.select-persona-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const personaName = this.getAttribute('data-persona');
+                    document.querySelector(`input[value="${personaName}"]`).checked = true;
+                });
+            });
+
+            // Charts
+            const personasChart = new Chart(
+                document.getElementById('personasChart'),
+                {
+                    type: 'doughnut',
+                    data: {
+                        labels: <%- JSON.stringify(chartData.personasLabels) %>,
+                        datasets: [{
+                            data: <%- JSON.stringify(chartData.personasData) %>,
+                            backgroundColor: [
+                                '#0d6efd', '#6610f2', '#6f42c1', '#d63384', 
+                                '#dc3545', '#fd7e14', '#ffc107', '#20c997', '#198754'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            }
+                        }
+                    }
+                }
+            );
+
+            const transformationsChart = new Chart(
+                document.getElementById('transformationsChart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: <%- JSON.stringify(chartData.daysLabels) %>,
+                        datasets: [{
+                            label: 'Transformations',
+                            data: <%- JSON.stringify(chartData.transformationsData) %>,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        });
+    </script>
+</body>
+</html>
