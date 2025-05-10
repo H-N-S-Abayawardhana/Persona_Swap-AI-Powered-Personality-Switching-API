@@ -4,93 +4,17 @@
 
 const info = {
   name: 'Yoda',
-  description: 'Transforms text to sound like Jedi Master Yoda',
+  description: 'Transforms text to sound like the wise Jedi Master Yoda',
   examples: [
     {
-      original: 'I am going to the store.',
-      transformed: 'To the store, going I am, hmm.'
+      original: 'I need to learn more about the Force.',
+      transformed: 'Learn more about the Force, I need to.'
     }
   ]
 };
 
 /**
- * Split a sentence into its constituent parts
- * @param {string} sentence - Sentence to split
- * @returns {Object} - Object containing different parts of the sentence
- */
-function parseSentence(sentence) {
-  // Simple sentence parsing - not comprehensive but works for basic sentences
-  // Looking for pattern: [subject] [verb] [object/predicate]
-  
-  // Strip punctuation for processing
-  const plainSentence = sentence.replace(/[.,!?;]$/g, '').trim();
-  
-  // Simple patterns to detect
-  const patterns = [
-    // "I am happy" -> ["I", "am happy"]
-    { regex: /^(I|you|we|they|he|she|it|[A-Z][a-z]+) (am|are|is|was|were|have|has|had|will|would|can|could|may|might|shall|should|must)(.+)$/i, 
-      parts: (matches) => ({ subject: matches[1], verb: matches[2], predicate: matches[3].trim() }) },
-    
-    // "I like pizza" -> ["I", "like", "pizza"]
-    { regex: /^(I|you|we|they|he|she|it|[A-Z][a-z]+) ([a-z]+)(.+)$/i,
-      parts: (matches) => ({ subject: matches[1], verb: matches[2], predicate: matches[3].trim() }) },
-      
-    // Default case - split into thirds if possible
-    { regex: /^(.+)$/,
-      parts: (matches) => {
-        const words = matches[1].split(' ');
-        if (words.length >= 3) {
-          const third = Math.floor(words.length / 3);
-          return {
-            subject: words.slice(0, third).join(' '),
-            verb: words.slice(third, third * 2).join(' '),
-            predicate: words.slice(third * 2).join(' ')
-          };
-        } else if (words.length === 2) {
-          return {
-            subject: words[0],
-            verb: '',
-            predicate: words[1]
-          };
-        } else {
-          return {
-            subject: matches[1],
-            verb: '',
-            predicate: ''
-          };
-        }
-      }
-    }
-  ];
-  
-  // Try each pattern
-  for (const pattern of patterns) {
-    const matches = plainSentence.match(pattern.regex);
-    if (matches) {
-      return pattern.parts(matches);
-    }
-  }
-  
-  // Fallback
-  return { 
-    subject: plainSentence,
-    verb: '',
-    predicate: ''
-  };
-}
-
-/**
- * Get the ending punctuation of a sentence
- * @param {string} sentence - The sentence
- * @returns {string} - The ending punctuation
- */
-function getEndingPunctuation(sentence) {
-  const match = sentence.match(/([.,!?;]+)$/);
-  return match ? match[1] : '.';
-}
-
-/**
- * Transform message into Yoda speak
+ * Transform message into Yoda style
  * @param {string} message - The original message to transform
  * @returns {string} - The transformed message in Yoda's style
  */
@@ -98,70 +22,121 @@ function transform(message) {
   if (!message || typeof message !== 'string') {
     return '';
   }
+
+  // First, let's separate punctuation from the end of the message
+  let punctuation = '';
+  let trimmedMessage = message;
+
+  const endPunctuation = message.match(/[.!?]+$/);
+  if (endPunctuation) {
+    punctuation = endPunctuation[0];
+    trimmedMessage = message.slice(0, message.length - punctuation.length);
+  }
   
   // Split the message into sentences
-  const sentences = message.match(/[^.!?;]+[.!?;]+/g) || [message];
-  
+  const sentences = trimmedMessage.split(/(?<=[.!?])\s+/);
   const transformedSentences = sentences.map(sentence => {
-    // Get ending punctuation
-    const punctuation = getEndingPunctuation(sentence);
+    // Clean any remaining punctuation for processing
+    let sentencePunctuation = '';
+    let cleanSentence = sentence;
     
-    // Parse the sentence
-    const parts = parseSentence(sentence);
+    const sentenceEndPunct = sentence.match(/[.!?]+$/);
+    if (sentenceEndPunct) {
+      sentencePunctuation = sentenceEndPunct[0];
+      cleanSentence = sentence.slice(0, sentence.length - sentencePunctuation.length);
+    }
     
-    // Build Yoda-style sentence - basic pattern: [object], [subject] [verb]
-    let yodaSentence = '';
-    
-    if (parts.predicate && parts.subject) {
-      // Standard Yoda inversion
-      yodaSentence = `${parts.predicate}, ${parts.subject} ${parts.verb}`;
-    } else if (parts.subject.includes(' ')) {
-      // If can't find clear parts but subject has multiple words, 
-      // try splitting subject into parts
-      const subjectWords = parts.subject.split(' ');
-      const firstHalf = subjectWords.slice(0, Math.ceil(subjectWords.length / 2)).join(' ');
-      const secondHalf = subjectWords.slice(Math.ceil(subjectWords.length / 2)).join(' ');
-      yodaSentence = `${secondHalf}, ${firstHalf}`;
+    // Simple Yoda transformation: move the subject and verb to the end
+    // This won't work for all sentence structures but gives a good approximation
+    if (cleanSentence.includes(',')) {
+      // If there's a comma-separated clause, we can do some manipulation
+      const parts = cleanSentence.split(',');
+      return parts.slice(1).join(',').trim() + ', ' + parts[0].trim() + sentencePunctuation;
     } else {
-      // Fallback - use original
-      yodaSentence = parts.subject;
+      // Simple case: Split into parts and rearrange
+      const parts = cleanSentence.split(' ');
+      
+      if (parts.length > 3) {
+        // For longer sentences, try to identify a natural break point
+        const middleIndex = Math.floor(parts.length / 2);
+        const firstHalf = parts.slice(0, middleIndex).join(' ');
+        const secondHalf = parts.slice(middleIndex).join(' ');
+        return secondHalf + ', ' + firstHalf + sentencePunctuation;
+      } else if (parts.length >= 2) {
+        // Simple inversion for short sentences
+        const firstPart = parts.slice(0, Math.ceil(parts.length / 2)).join(' ');
+        const secondPart = parts.slice(Math.ceil(parts.length / 2)).join(' ');
+        return secondPart + ', ' + firstPart + sentencePunctuation;
+      }
+      
+      // If it's just one word, return it as is
+      return cleanSentence + sentencePunctuation;
     }
-    
-    // Clean up
-    yodaSentence = yodaSentence
-      .replace(/\s+/g, ' ')      // Remove extra spaces
-      .replace(/\s+,/g, ',')     // Remove space before comma
-      .trim();
-    
-    // Add Yoda's characteristic expressions
-    const yodaExpressions = [
-      'Hmm.', 
-      'Yes, hmmm.', 
-      'Mmm.',
-      ''  // Empty expression to reduce frequency
-    ];
-    
-    // Add a random expression about 50% of the time
-    const addExpression = Math.random() > 0.5;
-    const randomExpression = yodaExpressions[Math.floor(Math.random() * yodaExpressions.length)];
-    
-    // Build final sentence with proper capitalization and Yoda expression
-    let result = yodaSentence.charAt(0).toUpperCase() + yodaSentence.slice(1);
-    
-    // Add original punctuation
-    if (!result.endsWith(punctuation)) {
-      result += punctuation;
-    }
-    
-    // Add Yoda expression if selected
-    if (addExpression && randomExpression) {
-      result += ' ' + randomExpression;
-    }
-    
-    return result;
   });
   
-  return transformedSentences.join(' ');
+  // Join transformed sentences
+  let result = transformedSentences.join(' ');
+  
+  // Yoda's vocabulary replacements
+  const replacements = {
+    'I': 'I',  // No change but included for potential future modifications
+    'my': 'my',
+    'am': 'am',
+    'will': 'will',
+    'have to': 'must',
+    'need to': 'must',
+    'there is': 'there is',
+    'it is': 'it is',
+    'that is': 'that is'
+  };
+  
+  // Apply word replacements
+  for (const [original, replacement] of Object.entries(replacements)) {
+    const regex = new RegExp(`\\b${original}\\b`, 'gi');
+    result = result.replace(regex, replacement);
+  }
+  
+  // Add Yoda's phrases at the beginning or end (30% chance)
+  if (Math.random() < 0.3) {
+    const yodaPhrases = [
+      'Hmm, ',
+      'Yes, hmm. ',
+      'Yeesssssss. ',
+      '',  // Empty for variety
+    ];
+    
+    const randomPhrase = yodaPhrases[Math.floor(Math.random() * yodaPhrases.length)];
+    result = randomPhrase + result;
+  }
+  
+  // Add Yoda's particles at the end (20% chance)
+  if (Math.random() < 0.2) {
+    const yodaParticles = [
+      ' Yes.',
+      ' Hmm.',
+      ' I sense much fear in you.',
+      ' The Force is strong with this one.',
+      ' Meditate on this, I will.'
+    ];
+    
+    // If message doesn't end with punctuation, add it
+    if (!/[.!?]$/.test(result)) {
+      result += '.';
+    }
+    
+    const randomParticle = yodaParticles[Math.floor(Math.random() * yodaParticles.length)];
+    result += randomParticle;
+  }
+  
+  // Add final punctuation back
+  if (punctuation && !result.endsWith(punctuation)) {
+    result += punctuation;
+  }
+  
+  // Capitalize first letter
+  result = result.charAt(0).toUpperCase() + result.slice(1);
+  
+  return result;
 }
 
 module.exports = {

@@ -165,3 +165,9 @@ function transform(message) {
   result = result.charAt(0).toUpperCase() + result.slice(1);
   
   return result;
+}
+
+module.exports = {
+  info,
+  transform
+};
